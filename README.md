@@ -1,2 +1,0 @@
-# blinchiki
-Blinchiki, dumbbell
