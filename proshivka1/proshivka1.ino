@@ -94,7 +94,7 @@ bool test_error_vertical_traction (void);
 void LEDLight(char color) ; 
 
 void ShowExScreen (int ex_number);
-void ShowStrScreen (int str_number);
+
 void ShowUpScreen(int rpt_limit);
 int str_number;
 int rpt_limit = 0;
@@ -171,7 +171,8 @@ void loop() {
       
     }
     
-    //Вывод "Кол-во" подъемов
+    lcd.setCursor(0,0);
+    lcd.print("Podem");
      while(true){
       if(BUT_ONE == ON && !eventTime) {
         eventTime=millis(); // засекли когда произошло событие
@@ -689,13 +690,20 @@ void initBLE (void)
 
 
 void ShowExScreen(int ex_number){
-  //case
+  lcd.setCursor(0, 0);
+  switch(ex_number) {
+    case 1: 
+      lcd.print("Izol sgib");
+      break;
+    case 2:
+      lcd.print("vertik");
+      break;
+  }
 }
-void ShowStrScreen (int str_number){
-  //case
 
-}
 void ShowUpScreen(int rpt_limit){
-  //
+  lcd.setCursor(0, 0);
+  String str11 = (String)rpt_limit;
+  lcd.print(str11);
 }
 
