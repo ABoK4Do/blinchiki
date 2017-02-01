@@ -10,9 +10,7 @@
  * 
  */
 #include <CurieBLE.h>
-
 #include <CurieIMU.h>
-
 #include <SoftwareSerial.h>
 #include <CurieTimerOne.h>
 #include <LiquidCrystal.h>
@@ -42,17 +40,22 @@ void initBLE (void);
 
 /*** BLE data end  ***/
 
-//Используем таймер, чтобы моргать светодиодом. 
-//Количество микросекунд в секунде:
-const int oneSecInUsec = 1000000;  
-//Порт светодиода: 
+ 
+//Порты:
+//Свет
 #define RED_PIN 9
 #define GREEN_PIN 8
-//Порт кнопки
+//Кнопки
 #define BUT_ONE 2
 
+//Константы 
 #define holdtime 2000
 #define holdtime2 500
+#define ON LOW
+#define OFF HIGH
+unsigned long eventTime=0;
+#define MAX_EX 2
+int wait = 1;
 
 
 //Инициирующее значение по ключевой оси. Его достижение означает 
@@ -97,17 +100,11 @@ void LEDLight(char color) ;
 void ShowExScreen (int ex_number);
 
 void ShowUpScreen(int rpt_limit);
-int str_number;
 int rpt_limit = 0;
 #define ISOLATED_FLECTION 1
 #define VERTICAL_TRACTION 2
 
-//Переменные для сигнала на цифровых входах
-#define ON LOW
-#define OFF HIGH
-unsigned long eventTime=0;
-#define MAX_EX 2
-int wait = 1;
+
 // Инициализируем объект-экран, передаём использованные 
 // для подключения контакты на Arduino в порядке:
 // RS, E, DB4, DB5, DB6, DB7
@@ -116,7 +113,7 @@ LiquidCrystal lcd(4, 5, 10, 11, 12, 13);
 void setup() {
     // устанавливаем размер (количество столбцов и строк) экрана
     lcd.begin(16, 2);
-    lcd.print("Hello, friend");
+    lcd.print("Hello, friend!");
     pinMode(RED_PIN, OUTPUT);
     pinMode(GREEN_PIN, OUTPUT);
     pinMode(BUT_ONE, INPUT);
@@ -151,12 +148,12 @@ void loop() {
     int ex_number = ISOLATED_FLECTION;
     
     
-    //Вывод на экран "Выберите
     
-    lcd.print("3a\xB6\xBC\xB8\xBF\x65 \xE3\xBB\xC7");
+    
+    lcd.print("3a\xB6\xBC\xB8\xBF\x65 \xBA\xBDo\xBE\xBAy"); //Зажмите кнопку
     lcd.setCursor(0, 1);
     //Вывод на экран "упражнение
-    lcd.print("\xB3\xC3\xB2opa");
+    lcd.print("\xE3\xBB\xC7 \xB3\xC3\xB2opa");//для выбора
     delay(1000);
 
     while(true){
@@ -182,7 +179,9 @@ void loop() {
     }
     lcd.clear();
     
-    lcd.print("Podem");
+    lcd.print("\x4B\x6F\xBB\x2D\xB3\x6F");//Кол-во
+    lcd.setCursor(0,1);
+    lcd.print("\xBE\x6F\xB3\xBF\x6F\x70\x65\xBD\xB8\xB9");//повторений
      while(true){
       if(digitalRead(BUT_ONE) == ON && !eventTime) {
         eventTime=millis(); // засекли когда произошло событие
@@ -221,13 +220,15 @@ void loop() {
 
         if (ISOLATED_FLECTION == ex_number) {
           lcd.clear();
-            lcd.print("Calibrate... ");
+            lcd.print("\x4B\x61\xBB\xB8\xB2\x70\x6F\xB3\xBA\x61... "); //Калибровка...
          
             delay(1500);
             
             calibrate_isolated_flexion(true);
             lcd.clear();  
-            lcd.print("Calibrated!");
+            lcd.print("\xA1\x6F\xBF\x6F\xB3\x6F\x21");//Готово!
+            lcd.setCursor(0,1);
+            lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
             LEDLight('G');
             CurieTimerOne.pause();
             
@@ -236,14 +237,16 @@ void loop() {
         
         } else if (VERTICAL_TRACTION == ex_number) {
           lcd.clear();
-            lcd.print("Calibrate... ");
+            lcd.print("\x4B\x61\xBB\xB8\xB2\x70\x6F\xB3\xBA\x61... "); //Калибровка...
             
            
             delay(1500);
             
             calibrate_vertical_traction(true); 
             lcd.clear(); 
-            lcd.print("Calibrated!");
+            lcd.print("\xA1\x6F\xBF\x6F\xB3\x6F\x21");//Готово!
+            lcd.setCursor(0,1);
+            lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
             LEDLight('G');
             CurieTimerOne.pause();
            
@@ -722,11 +725,14 @@ void ShowExScreen(int ex_number){
   
   switch(ex_number) {
     case 1: 
-      
-      lcd.print("Izol sgib");
+      lcd.print("\xA5\xB7o\xBB\xB8po\xB3\x61\xBD\xBDoe"); //Изолированное
+      lcd.setCursor(0,1);
+      lcd.print("\x63\xB4\xB8\xB2\x61\xBD\xB8\x65");//сгибание
       break;
     case 2:
-      lcd.print("vertik");
+      lcd.print("Bep\xBF\xB8\xBA\x61\xBB\xC4\xBD\xC3\xB9");//Вертикальный
+      lcd.setCursor(0,1);
+      lcd.print("\xBE\x6F\xE3\xC2\xA2\xBC");//подъём
       break;
   }
 }
