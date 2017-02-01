@@ -46,12 +46,13 @@ void initBLE (void);
 //Количество микросекунд в секунде:
 const int oneSecInUsec = 1000000;  
 //Порт светодиода: 
-#define RED_PIN 13
-#define GREEN_PIN 12
+#define RED_PIN 9
+#define GREEN_PIN 8
 //Порт кнопки
 #define BUT_ONE 2
 
 #define holdtime 2000
+#define holdtime2 500
 
 
 //Инициирующее значение по ключевой оси. Его достижение означает 
@@ -102,8 +103,8 @@ int rpt_limit = 0;
 #define VERTICAL_TRACTION 2
 
 //Переменные для сигнала на цифровых входах
-#define OFF LOW
-#define ON HIGH
+#define ON LOW
+#define OFF HIGH
 unsigned long eventTime=0;
 #define MAX_EX 2
 
@@ -146,44 +147,51 @@ void loop() {
 
     //Выбираем упражнение (по умолчанию - изолированное сгибание):
     int ex_number = ISOLATED_FLECTION;
-
+    
+    
     //Вывод на экран "Выберите
-    lcd.print("Vibrat'");
+    
     lcd.setCursor(0, 1);
+    lcd.print("Vibrat' ");
     //Вывод на экран "упражнение
-    lcd.print("upragnenie");
+    lcd.print("uprag");
 
     while(true){
-      if(BUT_ONE == ON && !eventTime) {
+      if(digitalRead(BUT_ONE) == ON && !eventTime) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        ShowExScreen(ex_number);
         eventTime=millis(); // засекли когда произошло событие
         
       }
-      if(BUT_ONE == OFF && eventTime) {
+      if(digitalRead(BUT_ONE) == OFF && eventTime) {
         eventTime = 0;
         break;
       }
       if(eventTime && (millis()-eventTime>holdtime)){ // проверям прошло ли 2000 миллесекунд с события
         if(ex_number == MAX_EX) ex_number = 1;
         else ex_number++;
+        lcd.clear();
         ShowExScreen(ex_number);
         eventTime = 0;
       }
       
     }
+    lcd.clear();
     
-    lcd.setCursor(0,0);
     lcd.print("Podem");
      while(true){
-      if(BUT_ONE == ON && !eventTime) {
+      if(digitalRead(BUT_ONE) == ON && !eventTime) {
         eventTime=millis(); // засекли когда произошло событие
         
       }
-      if(BUT_ONE == OFF && eventTime) {
+      if(digitalRead(BUT_ONE) == OFF && eventTime) {
         eventTime = 0;
         break;
       }
-      if(eventTime && (millis()-eventTime>holdtime)){ // проверям прошло ли 2000 миллесекунд с события
+      if(eventTime && (millis()-eventTime>holdtime2)){ // проверям прошло ли 500 миллесекунд с события
          rpt_limit++;
+         lcd.clear();
          ShowUpScreen(rpt_limit);
          eventTime = 0;
       }
@@ -205,10 +213,13 @@ void loop() {
        
 
         if (ISOLATED_FLECTION == ex_number) {
+          lcd.clear();
             lcd.print("Calibrate... ");
          
             delay(1500);
-            calibrate_isolated_flexion(true);  
+            LEDLight('G');
+            calibrate_isolated_flexion(true);
+            lcd.clear();  
             lcd.print("Calibrated!");
             CurieTimerOne.pause();
             
@@ -216,10 +227,14 @@ void loop() {
             ex_isolated_flexion(rpt_limit);            
         
         } else if (VERTICAL_TRACTION == ex_number) {
+          lcd.clear();
             lcd.print("Calibrate... ");
+            
            
             delay(1500);
-            calibrate_vertical_traction(true);  
+            LEDLight('G');
+            calibrate_vertical_traction(true); 
+            lcd.clear(); 
             lcd.print("Calibrated!");
             CurieTimerOne.pause();
            
@@ -287,7 +302,7 @@ void ex_isolated_flexion (int rpt_limit) {
 
         
     }    
-    
+    lcd.clear();
     lcd.print("Finished!");
     while(true){
       if(BUT_ONE==ON) break;
@@ -342,7 +357,7 @@ void ex_vertical_traction (int rpt_limit) {
         
     }    
     
-   
+   lcd.clear();
     lcd.print("Finished!");
     while(true){
       if(BUT_ONE==ON) break;
@@ -656,20 +671,20 @@ void calibrate_vertical_traction (bool voice) {
 void LEDLight(char color)   
 {                  
   if(color == 'R') {
-      digitalWrite(RED_PIN, 1);
-      digitalWrite(GREEN_PIN, 0);
+      digitalWrite(RED_PIN, HIGH);
+      digitalWrite(GREEN_PIN, LOW);
   }
   if(color == 'G') {
-     digitalWrite(RED_PIN, 0);
-     digitalWrite(GREEN_PIN, 1);
+     digitalWrite(RED_PIN, LOW);
+     digitalWrite(GREEN_PIN, HIGH);
   }
   if(color == 'D') {
-     digitalWrite(RED_PIN, 1);
-     digitalWrite(GREEN_PIN, 1);
+     digitalWrite(RED_PIN, HIGH);
+     digitalWrite(GREEN_PIN, HIGH);
   }
   if(color == 'O'){
-     digitalWrite(RED_PIN, 0);
-     digitalWrite(GREEN_PIN, 0);
+     digitalWrite(RED_PIN, LOW);
+     digitalWrite(GREEN_PIN, LOW);
   }
 }
 
