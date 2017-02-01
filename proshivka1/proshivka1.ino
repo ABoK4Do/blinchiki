@@ -56,6 +56,12 @@ void initBLE (void);
 unsigned long eventTime=0;
 #define MAX_EX 2
 int wait = 1;
+int rpt = 1;
+
+//Очки
+int rpt_limit = 0;
+int score = 0;
+int combo = 1;
 
 
 //Инициирующее значение по ключевой оси. Его достижение означает 
@@ -100,7 +106,9 @@ void LEDLight(char color) ;
 void ShowExScreen (int ex_number);
 
 void ShowUpScreen(int rpt_limit);
-int rpt_limit = 0;
+
+void ShowScore(int score, int combo, int rpt);
+
 #define ISOLATED_FLECTION 1
 #define VERTICAL_TRACTION 2
 
@@ -144,6 +152,7 @@ void loop() {
     if(wait)
     delay(3000);
     lcd.clear();
+    rpt_limit = 0;
     //Выбираем упражнение (по умолчанию - изолированное сгибание):
     int ex_number = ISOLATED_FLECTION;
     
@@ -279,8 +288,9 @@ void ex_isolated_flexion (int rpt_limit) {
     
     
     
-    for (int rpt = 1; rpt <= rpt_limit; rpt++) {    
+    for (rpt = 1; rpt <= rpt_limit; rpt++) {    
        bool error = false;
+       
         //Пока движемся наверх и dy меньше предела, 
         //проверяем текущую ошибку по вспомогательным осям:
         do {
@@ -309,13 +319,23 @@ void ex_isolated_flexion (int rpt_limit) {
         
          
         //Количество сделанных повторов выводим на экран:
-       
-        lcd.print(rpt);
+        score = score+5*combo;
+        
+        ShowScore(score,combo,rpt);
+        combo++;
+        //BLE SCORE
 
         
     }    
+   
     lcd.clear();
-    lcd.print("Finished!");
+    lcd.print("\x42\xC3\xBE\x6F\xBB\xBD\x65\xBD\x6F");//Выполнено!
+    lcd.setCursor(0,1);
+    lcd.print("Score:");
+    lcd.print((String)score);
+    
+    score = 0;
+    combo = 1;
     wait = 0;
     LEDLight('O');
     while(true){
@@ -335,8 +355,9 @@ void ex_vertical_traction (int rpt_limit) {
     
     
     
-    for (int rpt = 1; rpt <= rpt_limit; rpt++) {    
+    for (rpt = 1; rpt <= rpt_limit; rpt++) {    
        bool error = false;
+       
         //Пока движемся наверх и dy меньше предела, 
         //проверяем текущую ошибку по вспомогательным осям:
         do {
@@ -366,13 +387,22 @@ void ex_vertical_traction (int rpt_limit) {
             
         //Количество сделанных повторов выводим на экран:
         
-        lcd.print(rpt);
+        score = score+5*combo;
+        ShowScore(score,combo,rpt);
+        combo++;
+        //BLE SCORE
 
         
     }    
-    
+
    lcd.clear();
-    lcd.print("Finished!");
+    lcd.print("\x42\xC3\xBE\x6F\xBB\xBD\x65\xBD\x6F");//Выполнено!
+    lcd.setCursor(0,1);
+    lcd.print("Score:");
+    lcd.print((String)score);
+    
+    score = 0;
+    combo = 1;
     wait = 0;
     LEDLight('O');
     while(true){
@@ -437,7 +467,8 @@ bool test_error_isolated_flexion (void) {
             "%.2f: err_flag ON with error = %.2f; %c", err_time/1000.0, 
             error, 0
         );
-
+        combo = 1;
+        ShowScore(score,combo,rpt);
         LEDLight('R');
         delay(1500);
            
@@ -511,6 +542,8 @@ bool test_error_vertical_traction (void) {
             error, 
             0
         );
+        combo = 1;
+        ShowScore(score,combo,rpt);
         LEDLight('R');
         delay(1500);   
     }    
@@ -739,7 +772,17 @@ void ShowExScreen(int ex_number){
 
 void ShowUpScreen(int rpt_limit){
   lcd.setCursor(0, 0);
-  String str11 = (String)rpt_limit;
-  lcd.print(str11);
+  lcd.print((String)rpt_limit);
+}
+void ShowScore(int score, int combo, int rpt) {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Score:");
+  lcd.print((String)score);
+  lcd.setCursor(0,1);
+  lcd.print("X");
+  lcd.print((String)combo);
+  lcd.setCursor(13,1);
+  lcd.print((String)rpt);
 }
 
