@@ -107,7 +107,7 @@ int rpt_limit = 0;
 #define OFF HIGH
 unsigned long eventTime=0;
 #define MAX_EX 2
-
+int wait = 1;
 // Инициализируем объект-экран, передаём использованные 
 // для подключения контакты на Arduino в порядке:
 // RS, E, DB4, DB5, DB6, DB7
@@ -144,17 +144,20 @@ void setup() {
 
 
 void loop() {
-
+    if(wait)
+    delay(3000);
+    lcd.clear();
     //Выбираем упражнение (по умолчанию - изолированное сгибание):
     int ex_number = ISOLATED_FLECTION;
     
     
     //Вывод на экран "Выберите
     
+    lcd.print("3a\xB6\xBC\xB8\xBF\x65 \xE3\xBB\xC7");
     lcd.setCursor(0, 1);
-    lcd.print("Vibrat' ");
     //Вывод на экран "упражнение
-    lcd.print("uprag");
+    lcd.print("\xB3\xC3\xB2opa");
+    delay(1000);
 
     while(true){
       if(digitalRead(BUT_ONE) == ON && !eventTime) {
@@ -183,6 +186,10 @@ void loop() {
      while(true){
       if(digitalRead(BUT_ONE) == ON && !eventTime) {
         eventTime=millis(); // засекли когда произошло событие
+          lcd.clear();
+        lcd.setCursor(0, 0);
+        ShowUpScreen(rpt_limit);
+        
         
       }
       if(digitalRead(BUT_ONE) == OFF && eventTime) {
@@ -217,10 +224,11 @@ void loop() {
             lcd.print("Calibrate... ");
          
             delay(1500);
-            LEDLight('G');
+            
             calibrate_isolated_flexion(true);
             lcd.clear();  
             lcd.print("Calibrated!");
+            LEDLight('G');
             CurieTimerOne.pause();
             
             //
@@ -232,10 +240,11 @@ void loop() {
             
            
             delay(1500);
-            LEDLight('G');
+            
             calibrate_vertical_traction(true); 
             lcd.clear(); 
             lcd.print("Calibrated!");
+            LEDLight('G');
             CurieTimerOne.pause();
            
             //
@@ -304,8 +313,10 @@ void ex_isolated_flexion (int rpt_limit) {
     }    
     lcd.clear();
     lcd.print("Finished!");
+    wait = 0;
+    LEDLight('O');
     while(true){
-      if(BUT_ONE==ON) break;
+      if(digitalRead(BUT_ONE)==ON) break;
     }
 }
 
@@ -359,8 +370,10 @@ void ex_vertical_traction (int rpt_limit) {
     
    lcd.clear();
     lcd.print("Finished!");
+    wait = 0;
+    LEDLight('O');
     while(true){
-      if(BUT_ONE==ON) break;
+      if(digitalRead(BUT_ONE)==ON) break;
     }
 }
 
@@ -705,9 +718,11 @@ void initBLE (void)
 
 
 void ShowExScreen(int ex_number){
-  lcd.setCursor(0, 0);
+  lcd.clear();
+  
   switch(ex_number) {
     case 1: 
+      
       lcd.print("Izol sgib");
       break;
     case 2:
