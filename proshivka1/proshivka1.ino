@@ -14,6 +14,7 @@
 #include <SoftwareSerial.h>
 #include <CurieTimerOne.h>
 #include <LiquidCrystal.h>
+#include <DFPlayer_Mini_Mp3.h>
 
 /*** BLE data  ***/
 
@@ -22,14 +23,11 @@ BLEPeripheral blePeripheral;
 //Создаем сервис и присваиваем ему UUID: 
 BLEService dumbbellService("19B10010-E8F2-537E-4F6C-D104768A1214");
 
-//Создаем характеристику типа char, в которую будет записываться
-//1) Номер упражнения;
-//2) Желаемое количество повторов (rpt_limit: смартфон -> гантеля) 
+ 
 //BLERead - запрос значение характеристики из мобильного приложения; 
 //BLENotify - непрерывный опрос характеристики телефоном; 
 //BLEWrite - отправка сообщения от телефона плате.
-BLECharCharacteristic rptLimitCharacteristic
-    ("19B10011-E8F2-537E-4F6C-D104768A1215", BLERead | BLENotify | BLEWrite);
+
 // Создание характеристики типа int, в которую будет записываться 
 // текущее число повторов (rpt: гантеля -> смартфон) 
 // и подтверждающий сигнал о выборе упражнения
@@ -40,6 +38,9 @@ void initBLE (void);
 
 /*** BLE data end  ***/
 
+//Порт под MP3-плеер:
+SoftwareSerial mySerial(6, 7); // RX (на TX у плеера), TX (на RX у плеера)
+#define BUSY_PIN 3
  
 //Порты:
 //Свет
@@ -57,11 +58,12 @@ unsigned long eventTime=0;
 #define MAX_EX 2
 int wait = 1;
 int rpt = 1;
+bool waserr = false;
 
 //Очки
 int rpt_limit = 0;
 int score = 0;
-int combo = 1;
+int combo = 0;
 
 
 //Инициирующее значение по ключевой оси. Его достижение означает 
@@ -140,7 +142,19 @@ void setup() {
     //Устанавливаем гироскоп на диапазон 250 градусов:
     CurieIMU.setGyroRange(250);
     
-    
+    //Настройки MP3:
+    //3 порт - на нем читаем состояние плеера (свободен-занят)
+    pinMode(BUSY_PIN, INPUT); 
+    mySerial.begin (9600);
+    mp3_set_serial(mySerial); //Отдаем RX-TX
+    delay(1);
+    mp3_set_volume (20); //Звук в диапазоне 0-30
+    //Ждем завершения переходных процессов, 
+    //иначе music может не сработать:
+    delay(300);
+    //
+     //music(2);
+    //delay(2000);
 
     //Запускаем BLE:
     initBLE();
@@ -238,7 +252,7 @@ void loop() {
             lcd.print("\xA1\x6F\xBF\x6F\xB3\x6F\x21");//Готово!
             lcd.setCursor(0,1);
             lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
-            LEDLight('G');
+            
             CurieTimerOne.pause();
             
             //
@@ -256,7 +270,7 @@ void loop() {
             lcd.print("\xA1\x6F\xBF\x6F\xB3\x6F\x21");//Готово!
             lcd.setCursor(0,1);
             lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
-            LEDLight('G');
+            
             CurieTimerOne.pause();
            
             //
@@ -287,7 +301,7 @@ void ex_isolated_flexion (int rpt_limit) {
     float dy;
     
     
-    
+    if(rpt>0) score = 5;
     for (rpt = 1; rpt <= rpt_limit; rpt++) {    
        bool error = false;
        
@@ -298,10 +312,14 @@ void ex_isolated_flexion (int rpt_limit) {
             dy = abs(y - y_init);
 
             //Проверяем на ошибку, уведомляем, если ошиблись:
-            error = test_error_isolated_flexion();            
+            error = test_error_isolated_flexion();  
+            if (error) waserr = true;          
         } while ((dy < dy_up_limit_isolated_flexion) || error);
         
-        
+         //Говорим, "и, раз!":
+         LEDLight('G');
+         delay(200);
+         LEDLight('O');
         
 
         //Движемся вниз:
@@ -311,18 +329,22 @@ void ex_isolated_flexion (int rpt_limit) {
 
             //Снова проверяем на ошибку, уведомляем, если ошиблись:
             error = test_error_isolated_flexion(); 
+            if (error) waserr = true;
         } while ((dy > dy_down_limit) || error);
         
         //Тут, в принципе, можно перекалибровать данные y_init
         //в нижней точке вызовом calibrate_isolated_flexion(false);
-        
-        
+        //Говорим, "и, два!":
+        LEDLight('G');
+         delay(200);
+         LEDLight('O');
          
         //Количество сделанных повторов выводим на экран:
-        score = score+5*combo;
         
+        score = score+5*combo;
+        if(!waserr) combo++;
         ShowScore(score,combo,rpt);
-        combo++;
+        waserr = false;
         //BLE SCORE
 
         
@@ -365,10 +387,14 @@ void ex_vertical_traction (int rpt_limit) {
             dy = abs(y - y_init);
 
             //Проверяем на ошибку, уведомляем, если ошиблись:
-            error = test_error_vertical_traction();            
+            error = test_error_vertical_traction(); 
+            if (error) waserr = true;           
         } while ((dy < dy_up_limit_vertical_traction) || error);
         
-        
+        //Говорим, "и, раз!":
+        LEDLight('G');
+         delay(200);
+         LEDLight('O');
        
 
         //Движемся вниз:
@@ -377,19 +403,24 @@ void ex_vertical_traction (int rpt_limit) {
             dy = abs(y - y_init);
 
             //Снова проверяем на ошибку, уведомляем, если ошиблись:
-            error = test_error_vertical_traction(); 
+            error = test_error_vertical_traction();
+            if (error) waserr = true; 
         } while ((dy > dy_down_limit) || error);
         
         //Тут, в принципе, можно перекалибровать данные y_init
         //в нижней точке вызовом calibrate_isolated_flexion(false);
         
-        
+        //Говорим, "и, два!":
+        LEDLight('G');
+         delay(200);
+         LEDLight('O');
             
         //Количество сделанных повторов выводим на экран:
         
         score = score+5*combo;
+        if(!waserr) combo++;
         ShowScore(score,combo,rpt);
-        combo++;
+        
         //BLE SCORE
 
         
@@ -470,7 +501,7 @@ bool test_error_isolated_flexion (void) {
         combo = 1;
         ShowScore(score,combo,rpt);
         LEDLight('R');
-        delay(1500);
+        delay(500);
            
     }    
 
@@ -478,7 +509,7 @@ bool test_error_isolated_flexion (void) {
     //чтобы иметь возможность реагировать на новые:   
     if ((error < err_limit) && err_flag) {
         err_flag = false;  
-        LEDLight('G');              
+        LEDLight('O');              
         char buffer[255];
         sprintf(buffer, "%.2f: err_flag OFF %c", millis()/1000.0, 0);
         Serial.println(buffer);
@@ -545,14 +576,14 @@ bool test_error_vertical_traction (void) {
         combo = 1;
         ShowScore(score,combo,rpt);
         LEDLight('R');
-        delay(1500);   
+        delay(500);   
     }    
 
     //Если же мы в корректной области, то сбрасываем флаг ошибки,
     //чтобы иметь возможность реагировать на новые:   
     if ((error < err_limit) && err_flag) {
         err_flag = false;  
-        LEDLight('G');              
+        LEDLight('O');              
         char buffer[255];
         sprintf(buffer, "%.2f: err_flag OFF %c", millis()/1000.0, 0);
         Serial.println(buffer);
@@ -744,7 +775,7 @@ void initBLE (void)
   blePeripheral.setLocalName("Dumbbell");
   blePeripheral.setAdvertisedServiceUuid(dumbbellService.uuid());
   blePeripheral.addAttribute(dumbbellService);
-  blePeripheral.addAttribute(rptLimitCharacteristic);
+  
   blePeripheral.addAttribute(rptCharacteristic);
 
   //Ожидаем подключения:
@@ -784,5 +815,37 @@ void ShowScore(int score, int combo, int rpt) {
   lcd.print((String)combo);
   lcd.setCursor(13,1);
   lcd.print((String)rpt);
+}
+/*
+ * Воспроизведение заданного трека.
+ *
+ * Приветствия:
+ * 0001  - все склонятся...
+ * 0002  - да, хозяин
+ * 0003  - да воцарится..
+ * 0004  - пришло время бодрости
+ * 
+ * Упражнение:
+ * 0005 - начали
+ * 0006, 0007 - закончили
+ * 0008 - и раз
+ * 0009 - и два
+ * 0010, 0011 - не халтурь
+ *
+ * Название упражнений:
+ * 0101 - Вертикальная тяга
+ * 0102 - Изолированное сгибание
+ */
+void music(int i) {
+    boolean play_state;
+    do {
+        play_state = digitalRead(BUSY_PIN); //BUSY_PIN = 3
+    } while (play_state == LOW);
+
+    mp3_play(i);
+
+    do {
+        play_state = digitalRead(BUSY_PIN);
+    } while (play_state == LOW);
 }
 
