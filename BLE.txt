@@ -1,5 +1,5 @@
 //Серивис
-BLEService dumbbellService("19B10010-E8F2-537E-4F6C-D104768A1214"); //номер сервиса
+BLEService dumbbellService("19B10010-E8F2-537E-4F6C-D104768A1214"); //id сервиса
 
 
 //Характеристики
