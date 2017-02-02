@@ -1,0 +1,10 @@
+//Серивис
+BLEService dumbbellService("19B10010-E8F2-537E-4F6C-D104768A1214"); //номер сервиса
+
+
+//Характеристики
+BLEIntCharacteristic exCharacteristic ("19B10012-E8F2-537E-4F6C-D104768A1216", BLERead | BLENotify); //номер упражнения 1-изолированное сгибание, 2-вертикальная тяга
+
+BLEIntCharacteristic scoreCharacteristic ("19B10013-E8F2-537E-4F6C-D104768A1217", BLERead | BLENotify); //кол-во очков
+
+BLEIntCharacteristic rptCharacteristic  ("19B10014-E8F2-537E-4F6C-D104768A1218", BLERead | BLENotify); //кол-во подъемов
