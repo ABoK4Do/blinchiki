@@ -31,15 +31,19 @@ BLEService dumbbellService("19B10010-E8F2-537E-4F6C-D104768A1214");
 // Создание характеристики типа int, в которую будет записываться 
 // текущее число повторов (rpt: гантеля -> смартфон) 
 // и подтверждающий сигнал о выборе упражнения
+BLEIntCharacteristic exCharacteristic
+    ("19B10012-E8F2-537E-4F6C-D104768A1216", BLERead | BLEWrite | BLENotify);
+BLEIntCharacteristic scoreCharacteristic
+    ("19B10013-E8F2-537E-4F6C-D104768A1217", BLERead | BLEWrite | BLENotify);
 BLEIntCharacteristic rptCharacteristic
-    ("19B10012-E8F2-537E-4F6C-D104768A1216", BLERead | BLENotify);
+    ("19B10014-E8F2-537E-4F6C-D104768A1218", BLERead | BLEWrite | BLENotify);
 
 void initBLE (void);
 
 /*** BLE data end  ***/
 
 //Порт под MP3-плеер:
-SoftwareSerial mySerial(6, 7); // RX (на TX у плеера), TX (на RX у плеера)
+SoftwareSerial mySerial(0, 1); // RX (на TX у плеера), TX (на RX у плеера)
 #define BUSY_PIN 3
  
 //Порты:
@@ -50,7 +54,7 @@ SoftwareSerial mySerial(6, 7); // RX (на TX у плеера), TX (на RX у �
 #define BUT_ONE 2
 
 //Константы 
-#define holdtime 2000
+#define holdtime 2500
 #define holdtime2 500
 #define ON LOW
 #define OFF HIGH
@@ -61,7 +65,7 @@ int rpt = 1;
 bool waserr = false;
 
 //Очки
-int rpt_limit = 0;
+int rpt_limit = 1;
 int score = 0;
 int combo = 0;
 
@@ -119,6 +123,8 @@ void ShowScore(int score, int combo, int rpt);
 // для подключения контакты на Arduino в порядке:
 // RS, E, DB4, DB5, DB6, DB7
 LiquidCrystal lcd(4, 5, 10, 11, 12, 13);
+byte EX_MUSIC[] = {102, 101};
+
 
 void setup() {
     // устанавливаем размер (количество столбцов и строк) экрана
@@ -148,14 +154,18 @@ void setup() {
     mySerial.begin (9600);
     mp3_set_serial(mySerial); //Отдаем RX-TX
     delay(1);
-    mp3_set_volume (20); //Звук в диапазоне 0-30
+    mp3_set_volume (25); //Звук в диапазоне 0-30
     //Ждем завершения переходных процессов, 
     //иначе music может не сработать:
     delay(300);
-    //
-     //music(2);
-    //delay(2000);
-
+    
+    randomSeed(analogRead(0));
+    music(random(1, 4));
+  
+    
+    
+    delay(2000);
+    
     //Запускаем BLE:
     initBLE();
 }
@@ -166,7 +176,7 @@ void loop() {
     if(wait)
     delay(3000);
     lcd.clear();
-    rpt_limit = 0;
+    rpt_limit = 1;
     //Выбираем упражнение (по умолчанию - изолированное сгибание):
     int ex_number = ISOLATED_FLECTION;
     
@@ -184,6 +194,8 @@ void loop() {
         lcd.clear();
         lcd.setCursor(0, 0);
         ShowExScreen(ex_number);
+        music(EX_MUSIC[ex_number-1]);
+         
         eventTime=millis(); // засекли когда произошло событие
         
       }
@@ -201,7 +213,9 @@ void loop() {
       
     }
     lcd.clear();
-    
+    exCharacteristic.setValue(ex_number);
+    rptCharacteristic.setValue(0);
+    scoreCharacteristic.setValue(0);
     lcd.print("\x4B\x6F\xBB\x2D\xB3\x6F");//Кол-во
     lcd.setCursor(0,1);
     lcd.print("\xBE\x6F\xB3\xBF\x6F\x70\x65\xBD\xB8\xB9");//повторений
@@ -252,7 +266,10 @@ void loop() {
             lcd.print("\xA1\x6F\xBF\x6F\xB3\x6F\x21");//Готово!
             lcd.setCursor(0,1);
             lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
-            
+            music(5);
+            LEDLight('G');
+            delay(300);
+            LEDLight('O');
             CurieTimerOne.pause();
             
             //
@@ -270,7 +287,10 @@ void loop() {
             lcd.print("\xA1\x6F\xBF\x6F\xB3\x6F\x21");//Готово!
             lcd.setCursor(0,1);
             lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
-            
+            music(5);
+            LEDLight('G');
+            delay(300);
+            LEDLight('O');
             CurieTimerOne.pause();
            
             //
@@ -301,7 +321,7 @@ void ex_isolated_flexion (int rpt_limit) {
     float dy;
     
     
-    if(rpt>0) score = 5;
+    score = 5;
     for (rpt = 1; rpt <= rpt_limit; rpt++) {    
        bool error = false;
        
@@ -343,6 +363,9 @@ void ex_isolated_flexion (int rpt_limit) {
         
         score = score+5*combo;
         if(!waserr) combo++;
+        
+        rptCharacteristic.setValue(rpt);
+        scoreCharacteristic.setValue(score);
         ShowScore(score,combo,rpt);
         waserr = false;
         //BLE SCORE
@@ -353,8 +376,9 @@ void ex_isolated_flexion (int rpt_limit) {
     lcd.clear();
     lcd.print("\x42\xC3\xBE\x6F\xBB\xBD\x65\xBD\x6F");//Выполнено!
     lcd.setCursor(0,1);
-    lcd.print("Score:");
+    lcd.print("Score:");//Score
     lcd.print((String)score);
+    music(7);
     
     score = 0;
     combo = 1;
@@ -419,6 +443,8 @@ void ex_vertical_traction (int rpt_limit) {
         
         score = score+5*combo;
         if(!waserr) combo++;
+        rptCharacteristic.setValue(rpt);
+        scoreCharacteristic.setValue(score);
         ShowScore(score,combo,rpt);
         
         //BLE SCORE
@@ -431,6 +457,7 @@ void ex_vertical_traction (int rpt_limit) {
     lcd.setCursor(0,1);
     lcd.print("Score:");
     lcd.print((String)score);
+    music(7);
     
     score = 0;
     combo = 1;
@@ -576,6 +603,7 @@ bool test_error_vertical_traction (void) {
         combo = 1;
         ShowScore(score,combo,rpt);
         LEDLight('R');
+        
         delay(500);   
     }    
 
@@ -794,9 +822,9 @@ void ShowExScreen(int ex_number){
       lcd.print("\x63\xB4\xB8\xB2\x61\xBD\xB8\x65");//сгибание
       break;
     case 2:
-      lcd.print("Bep\xBF\xB8\xBA\x61\xBB\xC4\xBD\xC3\xB9");//Вертикальный
+      lcd.print("Bep\xBF\xB8\xBA\x61\xBB\xC4\xBD\x61\xC7");//Вертикальная
       lcd.setCursor(0,1);
-      lcd.print("\xBE\x6F\xE3\xC2\xA2\xBC");//подъём
+      lcd.print("\xBF\xC7\xB4\x61");//тяга
       break;
   }
 }
