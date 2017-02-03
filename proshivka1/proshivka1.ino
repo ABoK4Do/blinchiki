@@ -268,7 +268,7 @@ void loop() {
             lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
             music(5);
             LEDLight('G');
-            delay(300);
+            delay(500);
             LEDLight('O');
             CurieTimerOne.pause();
             
@@ -289,7 +289,7 @@ void loop() {
             lcd.print("\x48\x61\xC0\xB8\xBD\x61\xB9\xBF\x65");//Начинайте
             music(5);
             LEDLight('G');
-            delay(300);
+            delay(500);
             LEDLight('O');
             CurieTimerOne.pause();
            
@@ -338,6 +338,7 @@ void ex_isolated_flexion (int rpt_limit) {
         
          //Говорим, "и, раз!":
          LEDLight('G');
+         music(8);
          delay(200);
          LEDLight('O');
         
@@ -356,6 +357,7 @@ void ex_isolated_flexion (int rpt_limit) {
         //в нижней точке вызовом calibrate_isolated_flexion(false);
         //Говорим, "и, два!":
         LEDLight('G');
+        music(9);
          delay(200);
          LEDLight('O');
          
@@ -417,6 +419,7 @@ void ex_vertical_traction (int rpt_limit) {
         
         //Говорим, "и, раз!":
         LEDLight('G');
+        music(8);
          delay(200);
          LEDLight('O');
        
@@ -436,6 +439,7 @@ void ex_vertical_traction (int rpt_limit) {
         
         //Говорим, "и, два!":
         LEDLight('G');
+        music(9);
          delay(200);
          LEDLight('O');
             
@@ -466,6 +470,8 @@ void ex_vertical_traction (int rpt_limit) {
     while(true){
       if(digitalRead(BUT_ONE)==ON) break;
     }
+    music(55);
+    delay(500);
 }
 
 
@@ -527,6 +533,8 @@ bool test_error_isolated_flexion (void) {
         );
         combo = 1;
         ShowScore(score,combo,rpt);
+        //Предупреждаем: "Неправильно!"
+        music(11);
         LEDLight('R');
         delay(500);
            
@@ -602,8 +610,9 @@ bool test_error_vertical_traction (void) {
         );
         combo = 1;
         ShowScore(score,combo,rpt);
+        //Предупреждаем: "Неправильно!"
         LEDLight('R');
-        
+        music(11);
         delay(500);   
     }    
 
@@ -863,6 +872,9 @@ void ShowScore(int score, int combo, int rpt) {
  * Название упражнений:
  * 0101 - Вертикальная тяга
  * 0102 - Изолированное сгибание
+ * 
+ * Доп треки
+ * 0055 - Опять работа?
  */
 void music(int i) {
     boolean play_state;
