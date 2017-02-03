@@ -812,14 +812,13 @@ void initBLE (void)
   blePeripheral.setLocalName("Dumbbell");
   blePeripheral.setAdvertisedServiceUuid(dumbbellService.uuid());
   blePeripheral.addAttribute(dumbbellService);
-  
+  blePeripheral.addAttribute(exCharacteristic);
+  blePeripheral.addAttribute(scoreCharacteristic);
   blePeripheral.addAttribute(rptCharacteristic);
 
   //Ожидаем подключения:
   blePeripheral.begin();
 }
-
-
 
 void ShowExScreen(int ex_number){
   lcd.clear();
